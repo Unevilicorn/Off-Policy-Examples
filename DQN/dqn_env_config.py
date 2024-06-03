@@ -26,7 +26,7 @@ env_to_configs = {
     "gym-pendulum": DqnEnvConfigs(
         env_name="Pendulum-v1",
         env_creator=discrete_gym_pendulum,
-        num_episodes=200,
+        num_episodes=300,
         gamma=0.99,
         max_steps=200,
         batch_size=128,
@@ -45,7 +45,7 @@ env_to_configs = {
     "gym-swimmer": DqnEnvConfigs(
         env_name="Swimmer",
         env_creator=discrete_gym_swimmer,
-        num_episodes=300,
+        num_episodes=500,
         gamma=0.99,
         max_steps=1000,
         batch_size=128,
@@ -64,7 +64,7 @@ env_to_configs = {
     "gym-halfcheetah": DqnEnvConfigs(
         env_name="halfcheetah",
         env_creator=discrete_gym_cheetah,
-        num_episodes=300,
+        num_episodes=500,
         gamma=0.99,
         max_steps=1000,
         batch_size=128,
