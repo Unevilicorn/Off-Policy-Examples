@@ -12,6 +12,7 @@ class DqnEnvConfigs:
     batch_size: int
     epsilon_init: float
     epsilon_min: float
+    epsilon_frac: float
     tau: float
     target_update: int
     memory_capacity: int
@@ -31,6 +32,7 @@ env_to_configs = {
         batch_size=128,
         epsilon_init=1.0,
         epsilon_min=0.01,
+        epsilon_frac=0.5,
         tau=0.001,
         target_update=1,
         memory_capacity=100000,
@@ -49,6 +51,7 @@ env_to_configs = {
         batch_size=128,
         epsilon_init=1.0,
         epsilon_min=0.01,
+        epsilon_frac=0.5,
         tau=0.001,
         target_update=1,
         memory_capacity=100000,
@@ -67,6 +70,7 @@ env_to_configs = {
         batch_size=128,
         epsilon_init=1.0,
         epsilon_min=0.01,
+        epsilon_frac=0.5,
         tau=0.001,
         target_update=1,
         memory_capacity=100000,

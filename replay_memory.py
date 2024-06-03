@@ -20,6 +20,9 @@ class ReplayMemory:
             samples = random.sample(self.memory, batch_size)
 
         reshaped_items = tuple(map(np.stack, zip(*samples)))
+        reshaped_items = tuple([
+            x.astype(np.float32) if x.dtype == np.float64 else x for x in reshaped_items
+        ])
         result = tuple(map(lambda x: torch.from_numpy(x).to(device), reshaped_items))
 
         return result

@@ -1,4 +1,5 @@
 # hack to import from parent directory
+import datetime
 import sys
 import os.path
 # get the current path
@@ -7,6 +8,7 @@ path = os.path.dirname(os.path.abspath(__name__))
 sys.path.insert(0, path)
 
 
+from dqn_helpers import dqn_cli, plot_and_save_average_plots
 from dqn_env_config import env_to_configs
 from maybe_wandb import get_wandb
 from replay_memory import ReplayMemory
@@ -64,7 +66,7 @@ def main(env_to_run, save_path, use_wandb=False):
     gamma = config.gamma
     epsilon = config.epsilon_init
     epsilon_min = config.epsilon_min
-    epsilon_steps = 0.5 * config.num_episodes * config.max_steps
+    epsilon_steps = config.epsilon_frac * config.num_episodes * config.max_steps
     epsilon_delta = (epsilon - epsilon_min) / epsilon_steps
     batch_size = config.batch_size
     memory_size = config.memory_capacity
@@ -92,7 +94,7 @@ def main(env_to_run, save_path, use_wandb=False):
 
     wandb_config = {
         "type": "Self-Implemented DQN",
-        "buffer_type": "Deque" if not config.use_reverb else "Reverb",
+        "buffer_type": "Default" if not config.use_reverb else "Reverb",
         "enviroment": chosen_env,
         "num_steps": config.max_steps,
         "num_episodes": config.num_episodes,
@@ -125,7 +127,7 @@ def main(env_to_run, save_path, use_wandb=False):
             qs = policy_model.forward(torch.from_numpy(state).to(DEVICE))
             action = epsilon_greedy_action(epsilon, qs, device=DEVICE)
             epsilon = max(epsilon_min, epsilon - epsilon_delta)
-            next_observation, reward, done, trunc, info = env.step(action.numpy(force=True))
+            next_observation, reward, done, trunc, info = env.step(action.item())
 
             next_observation = next_observation.reshape(-1)
             memory.append(state, action.detach().cpu(), reward, next_observation, done)
@@ -160,28 +162,10 @@ def main(env_to_run, save_path, use_wandb=False):
     wandb.log({'execution_time': execution_time_end - start_time})
     wandb.finish()
 
+    rewards_sums = [sum(rewards) for rewards in rewards_tracker]
 
-    # Save the plot in the save_path folder, if it does not exist, create it
-    from matplotlib import pyplot as plt
-
-    sums = [sum(rewards) for rewards in rewards_tracker]
-    plt.plot(sums)
-    window = 5
-    plt.plot([sum(sums[i:i+window])/window for i in range(len(sums)-window)])
-    plt.show()
-    
-    if not os.path.exists(save_path):
-        os.makedirs(save_path)
-    plt.savefig(os.path.join(save_path, datetime.now().strftime("%Y-%m-%d-%H-%M-%S")+".png"))
+    plot_and_save_average_plots(rewards_sums, save_path)
 
 
 if __name__ == "__main__":
-    # get the first argument
-    if len(sys.argv) < 2:
-        env = "gym-pendulum"
-    else:
-        env = sys.argv[1]
-    print(f"Running for {env}")
-    from datetime import datetime
-    path_to_save = os.path.join("./results", "dqn", env, "self-implemented")
-    main(env, path_to_save, use_wandb=False)
+    dqn_cli(main)
