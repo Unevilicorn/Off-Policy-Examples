@@ -2,7 +2,6 @@ from collections import deque, namedtuple
 import random
 import numpy as np
 import torch
-import reverb
 
 
 replayItem = namedtuple('replayItem', ('state', 'action', 'reward', 'next_state', 'done'))
@@ -32,6 +31,7 @@ class ReplayMemory:
 
 class ReverbMemory:
     def __init__(self, capacity) -> None:
+        import reverb
         self.table_name = 'priority_table'
         self.server = reverb.Server(tables=[
             reverb.Table(
