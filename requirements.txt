@@ -4,3 +4,5 @@ matplotlib==3.9.0
 numpy==1.26.4
 stable_baselines3==2.3.2
 torch==2.3.0
+wandb==0.17.0
+tianshou==0.5.1

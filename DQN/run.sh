@@ -4,7 +4,7 @@ cd "$(dirname "$0")"
 cd ..
 time_takens=()
 directory="./DQN/"
-files=("dqn_tianshou.py")
+files=("dqn.py" "dqn_stablebaseline3.py" "dqn_tianshou.py")
 args=("gym-pendulum" "gym-swimmer" "gym-halfcheetah")
 for file in ${files[@]}; do
     for arg in ${args[@]}; do
