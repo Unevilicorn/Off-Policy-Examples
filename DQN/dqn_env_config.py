@@ -18,7 +18,7 @@ class DqnEnvConfigs:
     memory_capacity: int
     learning_rate: float
     use_reverb: bool
-    gradient_clip: float
+    gradient_clip: float | None
     hidden_layers: list[int]
     action_space: int
 
@@ -26,7 +26,7 @@ env_to_configs = {
     "gym-pendulum": DqnEnvConfigs(
         env_name="Pendulum-v1",
         env_creator=discrete_gym_pendulum,
-        num_episodes=300,
+        num_episodes=200,
         gamma=0.99,
         max_steps=200,
         batch_size=128,
@@ -38,7 +38,7 @@ env_to_configs = {
         memory_capacity=100000,
         learning_rate=1e-4,
         use_reverb=False,
-        gradient_clip=1.0,
+        gradient_clip=None,
         hidden_layers=[64, 64],
         action_space=9**1,
     ),
@@ -57,7 +57,7 @@ env_to_configs = {
         memory_capacity=100000,
         learning_rate=1e-4,
         use_reverb=False,
-        gradient_clip=1.0,
+        gradient_clip=None,
         hidden_layers=[64, 64, 64],
         action_space=9**2,
     ),
@@ -76,7 +76,7 @@ env_to_configs = {
         memory_capacity=100000,
         learning_rate=1e-4,
         use_reverb=False,
-        gradient_clip=1.0,
+        gradient_clip=None,
         hidden_layers=[64, 64, 64, 64],
         action_space=3**6,
     )

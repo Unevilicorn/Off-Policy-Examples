@@ -112,10 +112,6 @@ def main(env_to_run, save_path, use_wandb=False):
 
     start_time = time.time()
 
-    compile_end_time = time.time()
-
-    wandb.log({'compile_time': compile_end_time - start_time})
-
     episode_steps = []
     rewards_tracker = []
     for i in range(num_episodes):
@@ -144,7 +140,8 @@ def main(env_to_run, save_path, use_wandb=False):
             policy_model.zero_grad()
             loss.backward()
 
-            torch.nn.utils.clip_grad_norm_(policy_model.parameters(), gradient_clipping_value)
+            if gradient_clipping_value is not None:
+                torch.nn.utils.clip_grad_norm_(policy_model.parameters(), gradient_clipping_value)
             optimizer.step()
             
             if steps % target_update_rate == 0:
@@ -168,4 +165,4 @@ def main(env_to_run, save_path, use_wandb=False):
 
 
 if __name__ == "__main__":
-    dqn_cli(main)
+    dqn_cli(main, path_to_save="./results/dqn/self_implemented")

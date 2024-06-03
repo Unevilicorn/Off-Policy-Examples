@@ -1,6 +1,7 @@
 # hack to import from parent directory
 import sys
 import os.path
+import time
 # get the current path
 path = os.path.dirname(os.path.abspath(__name__))
 # add the directory to the path
@@ -73,7 +74,7 @@ def main(env_to_run, save_path, use_wandb=False):
     tau = config.tau
     gamma = config.gamma
     target_update = config.target_update
-    gradient_clip = config.gradient_clip
+    gradient_clip = config.gradient_clip or float('inf')
     buffer_size = config.memory_capacity
     epsilon_init = config.epsilon_init
     epsilon_min = config.epsilon_min
@@ -102,20 +103,28 @@ def main(env_to_run, save_path, use_wandb=False):
 
     wandb = get_wandb(get_real=use_wandb)
 
+    rewards = []
+    losses = []
+
+    cb = logging_callback_creator(rewards, losses, wandb)
+    
     wandb.init(
         project="DQN Comparison",
         config=wandb_config,
     )
 
-    rewards = []
-    losses = []
+    
+    start = time.time()
 
-    cb = logging_callback_creator(rewards, losses, wandb)
     model.learn(total_timesteps=ep_size * n_steps, log_interval=1, callback=cb)
 
+    end = time.time()
+    duration = end - start
+    wandb.log({"execution_time": duration})
     wandb.finish()
+    print(f"Finished training in {duration} seconds")
 
-    plot_and_save_average_plots(rewards, save_path, window=5)
+    plot_and_save_average_plots(rewards, save_path)
 
 if __name__ == "__main__":
     dqn_cli(main, path_to_save="./results/dqn/stable_baseline")
