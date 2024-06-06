@@ -95,7 +95,7 @@ def main(env_to_run, save_path, use_wandb=False):
 
     wandb_config = {
         "type": "TianShou",
-        "buffer_type": "Default" if not config.use_reverb else "Reverb",
+        "buffer_type": "Default",
         "enviroment": chosen_env,
         "num_steps": config.max_steps,
         "num_episodes": config.num_episodes,

@@ -1,4 +1,5 @@
 # hack to import from parent directory
+import cProfile
 import sys
 import os.path
 import time
@@ -48,7 +49,6 @@ def logging_callback_creator(reward_arr, loss_arr, wdb):
                 loss = self.model.logger.name_to_value['train/loss']
                 print(f"Ep: {self.ep_num}, Reward: {reward}")
                 wdb.log({"reward": reward})
-                wdb.log({"loss_mean_ep": loss})
                 reward_arr.append(reward)
                 loss_arr.append(loss)   
                 self.reward_this_episode = 0
@@ -92,7 +92,7 @@ def main(env_to_run, save_path, use_wandb=False):
 
     wandb_config = {
         "type": "Stable Baselines 3",
-        "buffer_type": "Default" if not config.use_reverb else "Reverb",
+        "buffer_type": config.replay_type,
         "enviroment": chosen_env,
         "num_steps": config.max_steps,
         "num_episodes": config.num_episodes,
@@ -127,4 +127,6 @@ def main(env_to_run, save_path, use_wandb=False):
     plot_and_save_average_plots(rewards, save_path)
 
 if __name__ == "__main__":
+    # with cProfile.Profile() as pr:
     dqn_cli(main, path_to_save="./results/dqn/stable_baseline")
+        # pr.dump_stats('./dqn_sb.prof')

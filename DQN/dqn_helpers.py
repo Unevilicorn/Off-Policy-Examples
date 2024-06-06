@@ -15,7 +15,7 @@ def dqn_cli(func, path_to_save):
     print(f"Using wandb: {use_wandb}")
     
     path_to_save = os.path.join(path_to_save, env)
-    func(env, path_to_save, use_wandb=False)
+    func(env, path_to_save, use_wandb=use_wandb)
 
 def plot_and_save_average_plots(rewards, save_path, show=False, window=5):
     # Save the plot in the save_path folder, if it does not exist, create it

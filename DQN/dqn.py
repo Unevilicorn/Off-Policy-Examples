@@ -1,5 +1,5 @@
 # hack to import from parent directory
-import datetime
+import cProfile
 import sys
 import os.path
 # get the current path
@@ -47,7 +47,7 @@ def epsilon_greedy_action(epsilon, action_rewards, device)->torch.Tensor:
 def loss_func(policy_model, target_model, states, actions, rewards, next_states, dones, gamma): 
     actions = actions.view(-1, 1)
     rewards = rewards.view(-1, 1)
-    dones = dones.view(-1, 1).int()
+    dones = dones.view(-1, 1)
 
     q_values = policy_model.forward(states).gather(1, actions)
     next_q_values = target_model.forward(next_states).max(dim=1, keepdim=True)[0]
@@ -83,8 +83,10 @@ def main(env_to_run, save_path, use_wandb=False):
     model_shape = [*input_shape, *hideen_layers, output_shape]
 
 
+    # memory = NumpyMemory(memory_size, input_shape, 1)
     memory = ReplayMemory(memory_size)
     # memory = ReverbMemory(memory_size)
+    # memory = ReplayMemorySlow(memory_size)
     policy_model = DQN(model_shape)
     target_model = DQN(model_shape)
     target_model.load_state_dict(policy_model.state_dict())
@@ -94,7 +96,7 @@ def main(env_to_run, save_path, use_wandb=False):
 
     wandb_config = {
         "type": "Self-Implemented DQN",
-        "buffer_type": "Default" if not config.use_reverb else "Reverb",
+        "buffer_type": config.replay_type,
         "enviroment": chosen_env,
         "num_steps": config.max_steps,
         "num_episodes": config.num_episodes,
@@ -126,7 +128,7 @@ def main(env_to_run, save_path, use_wandb=False):
             next_observation, reward, done, trunc, info = env.step(action.item())
 
             next_observation = next_observation.reshape(-1)
-            memory.append(state, action.detach().cpu(), reward, next_observation, done)
+            memory.append(state, action.item(), reward, next_observation, int(done))
             state = next_observation
             
             rewards_tracker[-1].append(reward)
@@ -158,11 +160,13 @@ def main(env_to_run, save_path, use_wandb=False):
     execution_time_end = time.time()
     wandb.log({'execution_time': execution_time_end - start_time})
     wandb.finish()
-
+    print(f"Finished training in {execution_time_end - start_time} seconds")
     rewards_sums = [sum(rewards) for rewards in rewards_tracker]
 
     plot_and_save_average_plots(rewards_sums, save_path)
 
 
 if __name__ == "__main__":
+    # with cProfile.Profile() as pr:
     dqn_cli(main, path_to_save="./results/dqn/self_implemented")
+        # pr.dump_stats('./dqn.prof')
