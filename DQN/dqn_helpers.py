@@ -8,6 +8,9 @@ def dqn_cli(func, path_to_save):
     if len(sys.argv) < 2:
         env = "gym-pendulum"
         use_wandb = False
+    elif len(sys.argv) < 3:
+        env = sys.argv[1]
+        use_wandb = False
     else:
         env = sys.argv[1]
         use_wandb = sys.argv[2].lower() == "true"

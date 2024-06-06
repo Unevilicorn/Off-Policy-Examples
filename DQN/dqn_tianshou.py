@@ -124,7 +124,7 @@ def main(env_to_run, save_path, use_wandb=False):
                                         update_per_step=1,
                                         episode_per_test=ep_size,
                                         batch_size=batch_size,
-                                        train_fn=lambda epoch, env_step: policy.set_eps(epsilon_init - epsilon_decay * env_step,),
+                                        train_fn=lambda epoch, env_step: policy.set_eps(epsilon_init - epsilon_decay * epoch,),
                                         logger=logger,
     )
 

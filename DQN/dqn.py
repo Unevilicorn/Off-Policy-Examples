@@ -66,7 +66,7 @@ def main(env_to_run, save_path, use_wandb=False):
     gamma = config.gamma
     epsilon = config.epsilon_init
     epsilon_min = config.epsilon_min
-    epsilon_steps = config.epsilon_frac * config.num_episodes * config.max_steps
+    epsilon_steps = config.epsilon_frac * config.num_episodes
     epsilon_delta = (epsilon - epsilon_min) / epsilon_steps
     batch_size = config.batch_size
     memory_size = config.memory_capacity
@@ -124,7 +124,6 @@ def main(env_to_run, save_path, use_wandb=False):
             steps+=1
             qs = policy_model.forward(torch.from_numpy(state).to(DEVICE))
             action = epsilon_greedy_action(epsilon, qs, device=DEVICE)
-            epsilon = max(epsilon_min, epsilon - epsilon_delta)
             next_observation, reward, done, trunc, info = env.step(action.item())
 
             next_observation = next_observation.reshape(-1)
@@ -152,7 +151,9 @@ def main(env_to_run, save_path, use_wandb=False):
             
             if done or trunc:
                 break
+        
 
+        epsilon = max(epsilon_min, epsilon - epsilon_delta)
         episode_steps.append(steps)
         print(f"Episode {i} finished with reward {sum(rewards_tracker[-1])}")
         wandb.log({'reward': sum(rewards_tracker[-1])})        
@@ -169,4 +170,4 @@ def main(env_to_run, save_path, use_wandb=False):
 if __name__ == "__main__":
     # with cProfile.Profile() as pr:
     dqn_cli(main, path_to_save="./results/dqn/self_implemented")
-        # pr.dump_stats('./dqn.prof')
+        # pr.dump_stats('./dqn_swimmer.prof')

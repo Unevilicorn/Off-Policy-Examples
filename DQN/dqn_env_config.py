@@ -26,7 +26,7 @@ env_to_configs = {
     "gym-pendulum": DqnEnvConfigs(
         env_name="Pendulum-v1",
         env_creator=discrete_gym_pendulum,
-        num_episodes=10,
+        num_episodes=300,
         gamma=0.99,
         max_steps=200,
         batch_size=128,
@@ -45,7 +45,7 @@ env_to_configs = {
     "gym-swimmer": DqnEnvConfigs(
         env_name="Swimmer",
         env_creator=discrete_gym_swimmer,
-        num_episodes=500,
+        num_episodes=300,
         gamma=0.99,
         max_steps=1000,
         batch_size=128,
@@ -58,13 +58,13 @@ env_to_configs = {
         learning_rate=1e-4,
         replay_type="default",
         gradient_clip=None,
-        hidden_layers=[64, 64, 64],
+        hidden_layers=[64, 64],
         action_space=9**2,
     ),
     "gym-halfcheetah": DqnEnvConfigs(
         env_name="halfcheetah",
         env_creator=discrete_gym_cheetah,
-        num_episodes=500,
+        num_episodes=300,
         gamma=0.99,
         max_steps=1000,
         batch_size=128,
@@ -77,7 +77,7 @@ env_to_configs = {
         learning_rate=1e-4,
         replay_type="default",
         gradient_clip=None,
-        hidden_layers=[64, 64, 64, 64],
+        hidden_layers=[128, 128],
         action_space=3**6,
     )
 }
