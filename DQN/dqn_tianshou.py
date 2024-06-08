@@ -16,6 +16,9 @@ from tianshou.utils import BaseLogger
 
 import torch
 
+DEVICE = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+print(f"Using device: {DEVICE}")
+
 class DQN(torch.nn.Module):
     def __init__(self, layer_sizes) -> None:
         super().__init__()
@@ -27,7 +30,7 @@ class DQN(torch.nn.Module):
 
     def forward(self, obs, state=None, info={})->torch.Tensor:
         if not isinstance(obs, torch.Tensor):
-            obs = torch.tensor(obs, dtype=torch.float32)
+            obs = torch.as_tensor(obs, dtype=torch.float32, device=DEVICE)
         batch = obs.shape[0]
         logits = self.model(obs.view(batch, -1))
         return logits, state
@@ -40,6 +43,7 @@ def get_custom_logger(wdb, log_interval, rewards):
             # print("train/reward", data['train/reward'])
             rewards.append(data['train/reward'])
             wdb.log({"reward": data['train/reward']})
+            print(f"Step: {step}, Reward: {data['train/reward']}")
 
         def save_data(self, epoch, env_step, gradient_step, save_checkpoint_fn) -> None:
             pass
@@ -78,6 +82,8 @@ def main(env_to_run, save_path, use_wandb=False):
     state_shape = env.observation_space.shape or env.observation_space.n
     action_shape = config.action_space or config.action_space.n
     net = DQN(state_shape + tuple(config.hidden_layers) + (action_shape,))
+    net.cuda()
+
     optim = torch.optim.Adam(net.parameters(), lr=learning_rate)
 
     policy = ts.policy.DQNPolicy(
@@ -119,8 +125,8 @@ def main(env_to_run, save_path, use_wandb=False):
     result = ts.trainer.offpolicy_trainer(policy=policy,
                                         train_collector=collector,
                                         test_collector=None,
-                                        max_epoch=ep_size,
-                                        step_per_epoch=n_steps,
+                                        max_epoch=ep_size * n_steps,
+                                        step_per_epoch=1,
                                         step_per_collect=1,
                                         update_per_step=1,
                                         episode_per_test=ep_size,
@@ -128,6 +134,7 @@ def main(env_to_run, save_path, use_wandb=False):
                                         train_fn=lambda epoch, env_step: policy.set_eps(epsilon_init - epsilon_decay * epoch,),
                                         logger=logger,
                                         verbose=False,
+                                        show_progress=False,
     )
 
     duration = result["duration"][:-1] # remove the 's' from the end

@@ -30,11 +30,11 @@ class ReplayMemory:
         else:
             idxs = random.sample(range(len(self.states)), batch_size)
         
-        states = torch.from_numpy(np.array(([self.states[i] for i in idxs]), dtype=np.float32)).to(device)
-        actions = torch.tensor([self.actions[i] for i in idxs], dtype=torch.int64).to(device)
-        rewards = torch.tensor([self.rewards[i] for i in idxs], dtype=torch.float32).to(device)
-        next_states = torch.from_numpy(np.array(([self.next_states[i] for i in idxs]), dtype=np.float32)).to(device)
-        dones = torch.tensor([self.dones[i] for i in idxs], dtype=torch.int32).to(device)
+        states = torch.as_tensor(np.array(([self.states[i] for i in idxs]), dtype=np.float32), device=device)
+        actions = torch.tensor([self.actions[i] for i in idxs], dtype=torch.int64, device=device)
+        rewards = torch.tensor([self.rewards[i] for i in idxs], dtype=torch.float32, device=device)
+        next_states = torch.as_tensor(np.array(([self.next_states[i] for i in idxs]), dtype=np.float32), device=device)
+        dones = torch.tensor([self.dones[i] for i in idxs], dtype=torch.int32, device=device)
 
         return (states, actions, rewards, next_states, dones)
     
