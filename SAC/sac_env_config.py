@@ -20,7 +20,7 @@ env_to_configs = {
     "gym-pendulum": SacEnvConfigs(
         env_name="Pendulum-v1",
         env_creator=gym_pendulum,
-        num_episodes=5,
+        num_episodes=300,
         num_steps=200,
         gamma=0.99,
         tau=0.01,
@@ -56,6 +56,4 @@ env_to_configs = {
         replay_type="default",
         hidden_layers=[128, 128]    
     )
-
-
 }
