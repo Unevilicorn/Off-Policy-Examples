@@ -87,7 +87,7 @@ class NumpyMemory:
         self.actions = np.zeros((capacity, *action_shape), dtype=np.int64)
         self.rewards = np.zeros(capacity, dtype=np.float32)
         self.next_states = np.zeros((capacity, *obs_shape), dtype=np.float32)
-        self.dones = np.zeros(capacity, dtype=np.float32)
+        self.dones = np.zeros(capacity, dtype=np.int32)
 
     def append(self, *args) -> None:
         self.size = min(self.size+1, self.capacity)

@@ -1,4 +1,5 @@
 # hack to import from parent directory
+import cProfile
 import sys
 import os.path
 # get the current path
@@ -86,7 +87,7 @@ def main(env_to_run, save_path, use_wandb=False):
         discount_factor=gamma,
         target_update_freq=target_update,
         is_double=False,
-        clip_loss_grad=gradient_clip
+        clip_loss_grad=gradient_clip,
     )
 
     collector = ts.data.Collector(policy, env, ts.data.ReplayBuffer(buffer_size))
@@ -95,7 +96,7 @@ def main(env_to_run, save_path, use_wandb=False):
 
     wandb_config = {
         "type": "TianShou",
-        "buffer_type": "Default",
+        "buffer_type": "default",
         "enviroment": chosen_env,
         "num_steps": config.max_steps,
         "num_episodes": config.num_episodes,
@@ -126,14 +127,19 @@ def main(env_to_run, save_path, use_wandb=False):
                                         batch_size=batch_size,
                                         train_fn=lambda epoch, env_step: policy.set_eps(epsilon_init - epsilon_decay * epoch,),
                                         logger=logger,
+                                        verbose=False,
     )
 
-    wandb.log({"execution_time": result["duration"]})
+    duration = result["duration"][:-1] # remove the 's' from the end
+    duration = float(duration)
+    wandb.log({"execution_time": duration})
     wandb.finish()
-    print(f'Finished training in {result["duration"]}')
+    print(f'Finished training in {duration}')
 
     plot_and_save_average_plots(rewards, save_path)
 
 
 if __name__ == "__main__":
+    # with cProfile.Profile() as pr:
     dqn_cli(main, path_to_save="./results/dqn/tianshou")
+        # pr.dump_stats('./dqn_ts_pendulum.prof')

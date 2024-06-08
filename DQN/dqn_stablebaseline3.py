@@ -129,4 +129,4 @@ def main(env_to_run, save_path, use_wandb=False):
 if __name__ == "__main__":
     # with cProfile.Profile() as pr:
     dqn_cli(main, path_to_save="./results/dqn/stable_baseline")
-        # pr.dump_stats('./dqn_sb.prof')
+        # pr.dump_stats('./dqn_sb_pendulum.prof')

@@ -11,7 +11,7 @@ sys.path.insert(0, path)
 from dqn_helpers import dqn_cli, plot_and_save_average_plots
 from dqn_env_config import env_to_configs
 from maybe_wandb import get_wandb
-from replay_memory import ReplayMemory
+from replay_memory import NumpyMemory, ReplayMemory, ReplayMemorySlow
 
 import torch
 import random
@@ -83,8 +83,8 @@ def main(env_to_run, save_path, use_wandb=False):
     model_shape = [*input_shape, *hideen_layers, output_shape]
 
 
-    # memory = NumpyMemory(memory_size, input_shape, 1)
-    memory = ReplayMemory(memory_size)
+    memory = NumpyMemory(memory_size, input_shape, 1)
+    # memory = ReplayMemory(memory_size)
     # memory = ReverbMemory(memory_size)
     # memory = ReplayMemorySlow(memory_size)
     policy_model = DQN(model_shape)
@@ -170,4 +170,4 @@ def main(env_to_run, save_path, use_wandb=False):
 if __name__ == "__main__":
     # with cProfile.Profile() as pr:
     dqn_cli(main, path_to_save="./results/dqn/self_implemented")
-        # pr.dump_stats('./dqn_swimmer.prof')
+        # pr.dump_stats('./dqn_pendulum.prof')
