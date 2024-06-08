@@ -96,7 +96,7 @@ def main(env_to_run, save_path, use_wandb=False):
     machine = os.uname().nodename
 
     wandb_config = {
-        "type": "Self-Implemented DQN",
+        "type": "Stable Baselines 3",
         "buffer_type": config.replay_type,
         "enviroment": env_to_run,
         "num_steps": config.num_steps,

@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 
-from SAC.sac_game_wrapper import  gym_halfcheetah, gym_pendulum, gym_swimmer
+from sac_game_wrapper import  gym_halfcheetah, gym_pendulum, gym_swimmer
 
 @dataclass
 class SacEnvConfigs:
@@ -20,7 +20,7 @@ env_to_configs = {
     "gym-pendulum": SacEnvConfigs(
         env_name="Pendulum-v1",
         env_creator=gym_pendulum,
-        num_episodes=300,
+        num_episodes=5,
         num_steps=200,
         gamma=0.99,
         tau=0.01,
