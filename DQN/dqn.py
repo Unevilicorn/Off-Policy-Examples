@@ -20,7 +20,7 @@ import time
 
 
 DEVICE = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-torch.set_default_device(DEVICE)
+# torch.set_default_device(DEVICE)
 print(f"Using device: {DEVICE}")
 
 
@@ -91,6 +91,9 @@ def main(env_to_run, save_path, use_wandb=False):
     # memory = ReplayMemorySlow(memory_size)
     policy_model = DQN(model_shape)
     target_model = DQN(model_shape)
+    policy_model.cuda()
+    target_model.cuda()
+    
     target_model.load_state_dict(policy_model.state_dict())
     optimizer = torch.optim.Adam(policy_model.parameters(), lr=config.learning_rate)
 
