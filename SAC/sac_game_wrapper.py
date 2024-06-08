@@ -15,5 +15,15 @@ class Float32Wrapper(gym.Wrapper):
         next_observation, reward, done, trunc, info = self.env.step(action)
         # convert next_observation to float32
         next_observation = next_observation.astype(np.float32)
-        reward = reward.astype(np.float32)
+        reward = reward.astype(np.float32).tolist()
         return next_observation, reward, done, trunc, info
+
+
+def gym_pendulum():
+    return Float32Wrapper(gym.make("Pendulum-v1"))
+
+def gym_swimmer():
+    return Float32Wrapper(gym.make("Swimmer-v4"))
+
+def gym_halfcheetah():
+    return Float32Wrapper(gym.make("HalfCheetah-v4"))
