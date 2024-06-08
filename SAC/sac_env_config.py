@@ -20,7 +20,7 @@ env_to_configs = {
     "gym-pendulum": SacEnvConfigs(
         env_name="Pendulum-v1",
         env_creator=gym_pendulum,
-        num_episodes=10,
+        num_episodes=300,
         num_steps=200,
         gamma=0.99,
         tau=0.01,
@@ -33,7 +33,7 @@ env_to_configs = {
     "gym-swimmer": SacEnvConfigs(
         env_name="Swimmer-v4",
         env_creator=gym_swimmer,
-        num_episodes=10,
+        num_episodes=300,
         num_steps=1000,
         gamma=0.99,
         tau=0.01,
@@ -46,7 +46,7 @@ env_to_configs = {
     "gym-halfcheetah": SacEnvConfigs(
         env_name="HalfCheetah-v4",
         env_creator=gym_halfcheetah,
-        num_episodes=10,
+        num_episodes=300,
         num_steps=1000,
         gamma=0.99,
         tau=0.01,

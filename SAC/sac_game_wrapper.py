@@ -5,8 +5,8 @@ class Float32Wrapper(gym.Wrapper):
     def __init__(self, env) -> None:
         super().__init__(env)
 
-    def reset(self):
-        observation, info = self.env.reset()
+    def reset(self, *args, **kwargs):
+        observation, info = self.env.reset(*args, **kwargs)
         # convert observation to float32
         observation = observation.astype(np.float32)
         return observation, info
