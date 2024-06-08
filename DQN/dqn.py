@@ -93,7 +93,7 @@ def main(env_to_run, save_path, use_wandb=False):
     target_model = DQN(model_shape)
     policy_model.cuda()
     target_model.cuda()
-    
+
     target_model.load_state_dict(policy_model.state_dict())
     optimizer = torch.optim.Adam(policy_model.parameters(), lr=config.learning_rate)
 
@@ -127,7 +127,7 @@ def main(env_to_run, save_path, use_wandb=False):
         rewards_tracker.append([])
         while True:
             steps+=1
-            qs = policy_model.forward(torch.from_numpy(state).to(DEVICE))
+            qs = policy_model.forward(torch.as_tensor(state, device=DEVICE))
             action = epsilon_greedy_action(epsilon, qs, device=DEVICE)
             next_observation, reward, done, trunc, info = env.step(action.item())
 
