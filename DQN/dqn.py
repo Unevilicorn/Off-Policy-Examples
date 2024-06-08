@@ -50,7 +50,9 @@ def loss_func(policy_model, target_model, states, actions, rewards, next_states,
     dones = dones.view(-1, 1)
 
     q_values = policy_model.forward(states).gather(1, actions)
-    next_q_values = target_model.forward(next_states).max(dim=1, keepdim=True)[0]
+    with torch.no_grad():
+        next_q_values = target_model.forward(next_states).max(dim=1, keepdim=True)[0]
+
     expected_q_values = rewards + gamma * next_q_values * (1 - dones)
     loss = torch.nn.functional.mse_loss(q_values, expected_q_values)
     return loss
@@ -83,8 +85,8 @@ def main(env_to_run, save_path, use_wandb=False):
     model_shape = [*input_shape, *hideen_layers, output_shape]
 
 
-    memory = NumpyMemory(memory_size, input_shape, 1)
-    # memory = ReplayMemory(memory_size)
+    # memory = NumpyMemory(memory_size, input_shape, 1)
+    memory = ReplayMemory(memory_size)
     # memory = ReverbMemory(memory_size)
     # memory = ReplayMemorySlow(memory_size)
     policy_model = DQN(model_shape)
