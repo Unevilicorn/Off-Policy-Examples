@@ -243,7 +243,7 @@ def main(env_to_run, save_path, use_wandb=False):
         config=wandb_config,
     )
     start = time.time()
-    scores, losses = sac.train(10, wandb=wandb)
+    scores, losses = sac.train(config.num_episodes, wandb=wandb)
     end = time.time()
     time_taken = end - start
     wandb.log({"execution_time": time_taken})
