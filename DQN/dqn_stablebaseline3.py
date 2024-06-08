@@ -81,11 +81,24 @@ def main(env_to_run, save_path, use_wandb=False):
     epsilon_frac = config.epsilon_frac
     learning_rate = config.learning_rate
 
-    model = DQN("MlpPolicy", env, policy_kwargs=policy_kwargs, gradient_steps=-1, learning_starts=0,
-                batch_size=batch_size, max_grad_norm=gradient_clip, gamma=gamma,
-                target_update_interval=target_update, tau=tau,
-                exploration_initial_eps=epsilon_init, exploration_final_eps=epsilon_min, exploration_fraction=epsilon_frac,
-                buffer_size=buffer_size, learning_rate=learning_rate, verbose=0)
+    model = DQN("MlpPolicy", 
+                env, 
+                policy_kwargs=policy_kwargs, 
+                gradient_steps=-1, 
+                learning_starts=0,
+                batch_size=batch_size, 
+                max_grad_norm=gradient_clip, 
+                gamma=gamma,
+                target_update_interval=target_update, 
+                tau=tau,
+                exploration_initial_eps=epsilon_init, 
+                exploration_final_eps=epsilon_min, 
+                exploration_fraction=epsilon_frac,
+                buffer_size=buffer_size, 
+                learning_rate=learning_rate, 
+                verbose=0,
+                train_freq=(1, "step")
+            )
 
 
     machine = os.uname().nodename
