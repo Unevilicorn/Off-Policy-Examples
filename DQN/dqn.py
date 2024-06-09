@@ -151,10 +151,11 @@ def main(env_to_run, save_path, use_wandb=False):
             optimizer.step()
             
             if steps % target_update_rate == 0:
-                for target_param, policy_param in zip(target_model.parameters(), policy_model.parameters()):
-                    # https://github.com/DLR-RM/stable-baselines3/pull/106/files#diff-fe0422470391efdc71a3583fbfb041b2b35d8399288bb5d2a3802002b1708061
-                    target_param.data.mul_(1.0 - tau)
-                    torch.add(target_param, policy_param, alpha=tau, out=target_param)
+                with torch.no_grad():
+                    for target_param, policy_param in zip(target_model.parameters(), policy_model.parameters()):
+                        # https://github.com/DLR-RM/stable-baselines3/pull/106/files#diff-fe0422470391efdc71a3583fbfb041b2b35d8399288bb5d2a3802002b1708061
+                        target_param.data.mul_(1.0 - tau)
+                        torch.add(target_param, policy_param, alpha=tau, out=target_param)
 
             if done or trunc:
                 break
