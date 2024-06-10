@@ -125,10 +125,14 @@ def main(env_to_run, save_path, use_wandb=False):
         state, _ = env.reset()
         steps = 0
         rewards_tracker.append([])
+        losses = []
+        log_actions = []
         while True:
             steps+=1
             qs = policy_model.forward(torch.as_tensor(state, device=DEVICE))
             action = epsilon_greedy_action(epsilon, qs, device=DEVICE)
+            best_action = torch.argmax(qs).item()
+            log_actions.append(action.item() == best_action)
             next_observation, reward, done, trunc, info = env.step(action.item())
 
             next_observation = next_observation.reshape(-1)
@@ -142,7 +146,8 @@ def main(env_to_run, save_path, use_wandb=False):
             batch = memory.sample(batch_size, device=DEVICE)
             states, actions, rewards, next_states, dones = batch
             loss = loss_func(policy_model, target_model, states, actions, rewards, next_states, dones, gamma)
-            
+            losses.append(loss.item())
+
             policy_model.zero_grad()
             loss.backward()
 
@@ -164,6 +169,17 @@ def main(env_to_run, save_path, use_wandb=False):
         epsilon = max(epsilon_min, epsilon - epsilon_delta)
         episode_steps.append(steps)
         print(f"Episode {i} finished with reward {sum(rewards_tracker[-1])}")
+        # print(f"Average loss: {sum(losses)/len(losses)}")
+        # print(f"Average rate of optimal actions: {sum(log_actions)/len(log_actions)}")
+
+        # with torch.no_grad():
+        #     diffs = [
+        #         torch.abs(target_param - policy_param).mean().item() for target_param, policy_param in zip(target_model.parameters(), policy_model.parameters())
+        #     ]
+
+        # print(f"Average difference between parameters: {sum(diffs) / len(diffs)}")
+        losses = []
+        log_actions = []
         wandb.log({'reward': sum(rewards_tracker[-1])})        
 
     execution_time_end = time.time()
