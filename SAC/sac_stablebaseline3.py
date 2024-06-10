@@ -81,7 +81,7 @@ def main(env_to_run, save_path, use_wandb=False):
     model = SAC("MlpPolicy", 
                 env, 
                 policy_kwargs=policy_kwargs, 
-                gradient_steps=-1, 
+                gradient_steps=1, 
                 learning_starts=0,
                 batch_size=batch_size, 
                 gamma=gamma,
@@ -89,7 +89,8 @@ def main(env_to_run, save_path, use_wandb=False):
                 buffer_size=buffer_size, 
                 learning_rate=learning_rate, 
                 verbose=0,
-                train_freq=(1, "step")
+                train_freq=(1, "step"),
+                ent_coef=f"auto_{config.alpha}",
             )
 
 

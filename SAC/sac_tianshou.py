@@ -50,7 +50,6 @@ def get_custom_logger(wdb, log_interval, rewards):
 
 
 def main(chosen_env, path_to_save, use_wandb=False):
-    chosen_env = "gym-pendulum"
     config = env_to_configs[chosen_env]
 
     env = config.env_creator()

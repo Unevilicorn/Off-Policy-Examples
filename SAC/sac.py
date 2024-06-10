@@ -51,12 +51,14 @@ class Critic(torch.nn.Module):
 class Actor(torch.nn.Module):
     def __init__(self, dims, high=None, low=None):
         super().__init__()
-        self.layers = torch.nn.Sequential()
+        self.layers = []
         
         for i in range(len(dims)-2):
             self.layers.append(torch.nn.Linear(dims[i], dims[i+1]))
             if i != len(dims)-2:
                 self.layers.append(torch.nn.LeakyReLU())
+
+        self.layers = torch.nn.Sequential(*self.layers)
 
         self.mu_layer = torch.nn.Linear(dims[-2], dims[-1])
         self.sigma_layer = torch.nn.Linear(dims[-2], dims[-1])
@@ -67,27 +69,32 @@ class Actor(torch.nn.Module):
         else:
             self.action_scale = torch.tensor((high - low) / 2, device=DEVICE)
             self.action_bias = torch.tensor((high + low) / 2, device=DEVICE)
+        
+        self.eps = 1e-6
             
     def sample(self, x):
         mus, sigmas = self.forward(x)
         sigmas = torch.exp(sigmas)
-        action = torch.distributions.Normal(mus, sigmas).sample()
+        action = torch.distributions.Normal(mus, sigmas).sample()        
         action = torch.tanh(action) * self.action_scale + self.action_bias
         return action
+
 
     def sample_with_log_prob(self, x):
         mus, sigmas = self.forward(x)
         sigmas = torch.exp(sigmas)
         probs = torch.distributions.Normal(mus, sigmas)
+        # reparametrization trick
         action = probs.rsample()
+        
+        action_tanh = torch.tanh(action)
 
         # Adjusting for the tanh squashing function
         log_prob = probs.log_prob(action)
-        log_prob -= (2 * (np.log(2) - action - torch.nn.functional.softplus(-2 * action)))
+        log_prob -= torch.log(1 - action_tanh ** 2 + self.eps)
         log_prob = log_prob.sum(1, keepdim=True)
 
-        action = torch.tanh(action) * self.action_scale + self.action_bias
-
+        action = action_tanh * self.action_scale + self.action_bias
         return action, log_prob
     
     def deterministic_action(self, x):
@@ -113,15 +120,13 @@ class SAC:
         
         self.policy_net_dims = [input_size, *policy_hidden_dim, output_size]
         self.critic_net_dims = [input_size + output_size, *q_hidden_dim, 1]
-                
         self.gamma = config.gamma
         self.batch_size = config.batch_size
         self.steps_to_wait = 0
         self.polyak = config.tau
 
-        self.log_alpha = torch.nn.Parameter(torch.tensor(np.log(0.2), device=DEVICE))
-        self.target_entropy = -torch.prod(torch.tensor(env.action_space.shape, device=DEVICE))
-        
+        self.log_alpha = torch.nn.Parameter(torch.tensor(np.log([config.alpha]), dtype=torch.float32, device=DEVICE))
+        self.target_entropy = -torch.prod(torch.tensor(env.action_space.shape, dtype=torch.float32, device=DEVICE))
         self.env = env
         self.replay_buffer = ReplayMemory(config.memory_capacity)
         
@@ -147,67 +152,74 @@ class SAC:
         for episode in range(episodes):
             state, _ = self.env.reset()
             scores.append([])
-            losses
+            losses.append([])
             while True:
                 # gather experience
-                action = self.policy.sample(torch.as_tensor(state, device=DEVICE))
-                cpu_action = action.detach().cpu().numpy()
+                with torch.no_grad():
+                    action = self.policy.sample(torch.as_tensor(state, device=DEVICE))
+                cpu_action = action.cpu().numpy()
                 next_state, reward, done, trunc, _ = self.env.step(cpu_action)
+
                 scores[-1].append(reward)
                 done = done or trunc
+
                 self.replay_buffer.append(state, cpu_action, reward, next_state, int(done))
                 
                 state = next_state
                 
                 # sample from buffer
-                states, actions, rewards, next_states, dones = self.replay_buffer.sample(self.batch_size, device=DEVICE)
+                r_states, r_actions, r_rewards, r_next_states, r_dones = self.replay_buffer.sample(self.batch_size, device=DEVICE)
                 # actions = actions.view(-1, 1)
-                rewards = rewards.view(-1, 1)
-                dones = dones.view(-1, 1)
+                r_rewards = r_rewards.view(-1, 1)
+                r_dones = r_dones.view(-1, 1)
 
+                now_actions, now_log_prob = self.policy.sample_with_log_prob(r_states)
+                now_log_prob = now_log_prob.reshape(-1, 1)
+
+                # update alpha
+                alpha_detach = self.log_alpha.detach().exp()
+                alpha_loss = -(self.log_alpha * (self.target_entropy + now_log_prob).detach()).mean()
+
+                self.alpha_optimizer.zero_grad()
+                alpha_loss.backward()
+                self.alpha_optimizer.step()
 
                 # update critic
                 with torch.no_grad():
-                    next_actions, next_log_prob = self.policy.sample_with_log_prob(next_states)
+                    next_actions, next_log_prob = self.policy.sample_with_log_prob(r_next_states)
 
-                    q1tv, q2tv = self.critic_t(next_states, next_actions)
-                    target = rewards + self.gamma * (~dones) * torch.min(q1tv, q2tv) - self.log_alpha.exp() * next_log_prob
+                    q1tv, q2tv = self.critic_t(r_next_states, next_actions)
+                    qtvmins = torch.min(torch.cat((q1tv, q2tv), dim=1), dim=1, keepdim=True)[0]
+                    next_qvs = qtvmins - alpha_detach * next_log_prob.reshape(-1, 1)
+
+                    target = r_rewards + self.gamma * (1 - r_dones) * next_qvs
                 
-                q1v, q2v = self.critic(states, actions)
+                q1v, q2v = self.critic(r_states, r_actions)
                 q1_loss = torch.nn.functional.mse_loss(q1v, target)
                 q2_loss = torch.nn.functional.mse_loss(q2v, target)
                 
-                critic_loss = q1_loss + q2_loss
+                critic_loss = (q1_loss + q2_loss) / 2
                 
                 self.critic_optimizer.zero_grad()
                 critic_loss.backward()
                 self.critic_optimizer.step()
                 
-                
                 # update policy
-                now_actions, now_log_prob = self.policy.sample_with_log_prob(next_states)
-                with torch.no_grad():
-                    q1v, q2v = self.critic(states, now_actions)
-                
-                policy_loss = torch.mean(self.log_alpha.exp() * now_log_prob - torch.min(q1v, q2v))
+                q1v, q2v = self.critic(r_states, now_actions)
+                qvmins = torch.min(torch.cat((q1v, q2v), dim=1), dim=1, keepdim=True)[0]
+                policy_loss = (alpha_detach * now_log_prob - qvmins).mean()
                 
                 self.policy_optimizer.zero_grad()
                 policy_loss.backward()
                 self.policy_optimizer.step()
-                
-                # update alpha
-                alpha_loss = torch.mean(self.log_alpha.exp() * (-self.target_entropy - now_log_prob).detach())
-                self.alpha_optimizer.zero_grad()
-                alpha_loss.backward()
-                self.alpha_optimizer.step()
-                
-
-                losses.append([q1_loss.item(), q2_loss.item(), policy_loss.item(), alpha_loss.item(), self.log_alpha.exp().item()])
+            
+                losses[-1].append([q1_loss.item(), q2_loss.item(), policy_loss.item(), alpha_loss.item(), self.log_alpha.exp().item()])
                 
                 # update target networks using polyak averaging
-                for target_param, param in zip(self.critic_t.parameters(), self.critic.parameters()):
-                    target_param.data.copy_(target_param.data * (1.0 - self.polyak) + param.data * self.polyak)
-                        
+                with torch.no_grad():
+                    for target_param, param in zip(self.critic_t.parameters(), self.critic.parameters()):
+                            target_param.data.mul_(1.0 - self.polyak)
+                            torch.add(target_param, param, alpha=self.polyak, out=target_param)                        
 
                 if done:
                     break
@@ -227,7 +239,7 @@ def main(env_to_run, save_path, use_wandb=False):
     machine = os.uname().nodename
 
     wandb_config = {
-        "type": "Self-Implemented DQN",
+        "type": "Self-Implemented SAC",
         "buffer_type": config.replay_type,
         "enviroment": chosen_env,
         "num_steps": config.num_steps,
