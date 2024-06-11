@@ -48,6 +48,16 @@ def discrete_gym_swimmer(num_actions):
         return [real_a1, real_a2]
     return DescreteToContinuousWrapper(env, action_remapping, maxAction=num_actions)
 
+def discrete_gym_reacher(num_actions):
+    env = gym.make("Reacher-v4")
+    sqrt_actions = num_actions ** 0.5
+    assert int(sqrt_actions) == sqrt_actions
+    def action_remapping(action):
+        a1, a2 = divmod(action, sqrt_actions)
+        real_a1 = remap_interval(a1, 0, sqrt_actions-1, -1, 1)
+        real_a2 = remap_interval(a2, 0, sqrt_actions-1, -1, 1)
+        return [real_a1, real_a2]
+    return DescreteToContinuousWrapper(env, action_remapping, maxAction=num_actions)
 
 def discrete_gym_cheetah(num_actions):
     env = gym.make("HalfCheetah-v4")

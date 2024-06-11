@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 
-from sac_game_wrapper import  gym_halfcheetah, gym_pendulum, gym_swimmer
+from sac_game_wrapper import  gym_halfcheetah, gym_pendulum, gym_reacher, gym_swimmer
 
 @dataclass
 class SacEnvConfigs:
@@ -42,6 +42,20 @@ env_to_configs = {
         tau=0.005,
         batch_size=256,
         memory_capacity=100000,
+        learning_rate=5e-4,
+        replay_type="default",
+        hidden_layers=[256, 256],
+        alpha=0.1
+    ),
+    "gym-reacher": SacEnvConfigs(
+        env_name="Reacher-v2",
+        env_creator=gym_reacher,
+        num_episodes=50,
+        num_steps=50,
+        gamma=0.99,
+        tau=0.005,
+        batch_size=256,
+        memory_capacity=10000,
         learning_rate=5e-4,
         replay_type="default",
         hidden_layers=[256, 256],

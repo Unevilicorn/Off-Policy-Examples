@@ -25,5 +25,8 @@ def gym_pendulum():
 def gym_swimmer():
     return Float32Wrapper(gym.make("Swimmer-v4"))
 
+def gym_reacher():
+    return Float32Wrapper(gym.make("Reacher-v4"))
+
 def gym_halfcheetah():
     return Float32Wrapper(gym.make("HalfCheetah-v4"))

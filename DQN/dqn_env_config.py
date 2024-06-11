@@ -1,4 +1,4 @@
-from dqn_game_wrapper import discrete_gym_pendulum, discrete_gym_swimmer, discrete_gym_cheetah
+from dqn_game_wrapper import discrete_gym_pendulum, discrete_gym_reacher, discrete_gym_swimmer, discrete_gym_cheetah
 
 from dataclasses import dataclass
 
@@ -61,6 +61,25 @@ env_to_configs = {
         hidden_layers=[128, 128],
         action_space=3**2,
     ),
+    "gym-reacher": DqnEnvConfigs(
+        env_name="Reacher-v4",
+        env_creator=discrete_gym_reacher,
+        num_episodes=100,
+        gamma=0.99,
+        max_steps=50,
+        batch_size=512,
+        epsilon_init=1.0,
+        epsilon_min=0.01,
+        epsilon_frac=0.75,
+        tau=0.01,
+        target_update=1,
+        memory_capacity=100000,
+        learning_rate=5e-4,
+        replay_type="default",
+        gradient_clip=None,
+        hidden_layers=[128, 128],
+        action_space=3**2,
+    ),
     "gym-halfcheetah": DqnEnvConfigs(
         env_name="HalfCheetah-v4",
         env_creator=discrete_gym_cheetah,
@@ -72,7 +91,7 @@ env_to_configs = {
         epsilon_min=0.01,
         epsilon_frac=0.75,
         tau=0.01,
-        target_update=10,
+        target_update=1,
         memory_capacity=100000,
         learning_rate=5e-4,
         replay_type="default",
