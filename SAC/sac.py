@@ -55,8 +55,7 @@ class Actor(torch.nn.Module):
         
         for i in range(len(dims)-2):
             self.layers.append(torch.nn.Linear(dims[i], dims[i+1]))
-            if i != len(dims)-2:
-                self.layers.append(torch.nn.LeakyReLU())
+            self.layers.append(torch.nn.LeakyReLU())
 
         self.layers = torch.nn.Sequential(*self.layers)
 
@@ -71,6 +70,9 @@ class Actor(torch.nn.Module):
             self.action_bias = torch.tensor((high + low) / 2, device=DEVICE)
         
         self.eps = 1e-6
+
+    def unnormalize(self, action):
+        return action * self.action_scale + self.action_bias
             
     def sample(self, x):
         mus, sigmas = self.forward(x)
@@ -86,16 +88,16 @@ class Actor(torch.nn.Module):
         probs = torch.distributions.Normal(mus, sigmas)
         # reparametrization trick
         action = probs.rsample()
-        
         action_tanh = torch.tanh(action)
 
         # Adjusting for the tanh squashing function
         log_prob = probs.log_prob(action)
-        log_prob -= torch.log(1 - action_tanh ** 2 + self.eps)
-        log_prob = log_prob.sum(1, keepdim=True)
 
-        action = action_tanh * self.action_scale + self.action_bias
-        return action, log_prob
+        # sum over the action dimensions
+        log_prob -= torch.log(1 - action_tanh ** 2 + self.eps)
+        log_prob = log_prob.sum(dim=1, keepdim=True)
+
+        return action_tanh, log_prob
     
     def deterministic_action(self, x):
         mus, sigmas = self.forward(x)
@@ -155,10 +157,10 @@ class SAC:
             losses.append([])
             while True:
                 # gather experience
-                with torch.no_grad():
-                    action = self.policy.sample(torch.as_tensor(state, device=DEVICE))
+                action = self.policy.sample(torch.as_tensor(state, device=DEVICE))
+                unscaled_action = self.policy.unnormalize(action).cpu().numpy()
                 cpu_action = action.cpu().numpy()
-                next_state, reward, done, trunc, _ = self.env.step(cpu_action)
+                next_state, reward, done, trunc, _ = self.env.step(unscaled_action)
 
                 scores[-1].append(reward)
                 done = done or trunc
@@ -170,16 +172,17 @@ class SAC:
                 # sample from buffer
                 r_states, r_actions, r_rewards, r_next_states, r_dones = self.replay_buffer.sample(self.batch_size, device=DEVICE)
                 # actions = actions.view(-1, 1)
-                r_rewards = r_rewards.view(-1, 1)
-                r_dones = r_dones.view(-1, 1)
+                r_rewards = r_rewards.reshape(-1, 1)
+                r_dones = r_dones.reshape(-1, 1)
 
                 now_actions, now_log_prob = self.policy.sample_with_log_prob(r_states)
-                now_log_prob = now_log_prob.reshape(-1, 1)
 
                 # update alpha
                 alpha_detach = self.log_alpha.detach().exp()
                 alpha_loss = -(self.log_alpha * (self.target_entropy + now_log_prob).detach()).mean()
-
+                # print(f"Alpha: {self.log_alpha.exp().item()}")
+                # print(f"Average log prob: {now_log_prob.mean().item()}")
+                # print(f"Alpha loss: {alpha_loss.item()}")
                 self.alpha_optimizer.zero_grad()
                 alpha_loss.backward()
                 self.alpha_optimizer.step()
@@ -187,19 +190,16 @@ class SAC:
                 # update critic
                 with torch.no_grad():
                     next_actions, next_log_prob = self.policy.sample_with_log_prob(r_next_states)
-
                     q1tv, q2tv = self.critic_t(r_next_states, next_actions)
                     qtvmins = torch.min(torch.cat((q1tv, q2tv), dim=1), dim=1, keepdim=True)[0]
-                    next_qvs = qtvmins - alpha_detach * next_log_prob.reshape(-1, 1)
-
-                    target = r_rewards + self.gamma * (1 - r_dones) * next_qvs
+                    next_qvs = qtvmins - alpha_detach * next_log_prob
+                    target = r_rewards + (1 - r_dones) * self.gamma * next_qvs
                 
                 q1v, q2v = self.critic(r_states, r_actions)
                 q1_loss = torch.nn.functional.mse_loss(q1v, target)
                 q2_loss = torch.nn.functional.mse_loss(q2v, target)
                 
                 critic_loss = (q1_loss + q2_loss) / 2
-                
                 self.critic_optimizer.zero_grad()
                 critic_loss.backward()
                 self.critic_optimizer.step()
@@ -227,6 +227,10 @@ class SAC:
             wandb.log({"reward": episode_reward})
                     
             print(f"Episode: {episode+1}, Reward: {episode_reward}")
+            # print(f"Average critic loss: {np.mean([l[0] for l in losses[-1]])}")
+            # print(f"Average policy loss: {np.mean([l[2] for l in losses[-1]])}")
+            # print(f"Average alpha loss: {np.mean([l[3] for l in losses[-1]])}")
+
         return scores, losses
 
 
