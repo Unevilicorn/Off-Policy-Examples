@@ -139,6 +139,10 @@ def main(chosen_env, path_to_save, use_wandb=False):
     wandb.init(
         project="SAC Comparison",
         config=wandb_config,
+        setting={
+            "_stats_sample_rate_seconds": 1,
+            "_stats_samples_to_average": 5,
+        },
     )
 
     result = ts.trainer.offpolicy_trainer(

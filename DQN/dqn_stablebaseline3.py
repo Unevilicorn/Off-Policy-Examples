@@ -123,6 +123,10 @@ def main(env_to_run, save_path, use_wandb=False):
     wandb.init(
         project="DQN Comparison",
         config=wandb_config,
+        setting={
+            "_stats_sample_rate_seconds": 1,
+            "_stats_samples_to_average": 5,
+        },
     )
 
     
