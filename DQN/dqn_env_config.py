@@ -64,7 +64,7 @@ env_to_configs = {
     "gym-reacher": DqnEnvConfigs(
         env_name="Reacher-v4",
         env_creator=discrete_gym_reacher,
-        num_episodes=100,
+        num_episodes=50,
         gamma=0.99,
         max_steps=50,
         batch_size=512,

@@ -4,6 +4,8 @@ import sys
 import os.path
 import time
 
+import numpy as np
+
 # get the current path
 path = os.path.dirname(os.path.abspath(__name__))
 # add the directory to the path
@@ -57,7 +59,8 @@ def main(chosen_env, path_to_save, use_wandb=False):
 
     net_a = Net(
         state_shape=env.observation_space.shape, 
-        hidden_sizes=config.hidden_layers, 
+        hidden_sizes=config.hidden_layers,
+        activation=torch.nn.LeakyReLU,
         device=DEVICE
     )
 
@@ -72,7 +75,8 @@ def main(chosen_env, path_to_save, use_wandb=False):
     net_c1 = Net(
         state_shape=env.observation_space.shape,
         action_shape=env.action_space.shape, 
-        hidden_sizes=config.hidden_layers, 
+        hidden_sizes=config.hidden_layers,
+        activation=torch.nn.LeakyReLU,
         concat=True,
         device=DEVICE
     )
@@ -83,6 +87,7 @@ def main(chosen_env, path_to_save, use_wandb=False):
         state_shape=env.observation_space.shape,
         action_shape=env.action_space.shape, 
         hidden_sizes=config.hidden_layers, 
+        activation=torch.nn.LeakyReLU,
         concat=True,
         device=DEVICE
     )
@@ -90,11 +95,10 @@ def main(chosen_env, path_to_save, use_wandb=False):
     critic2 = Critic(preprocess_net=net_c2, device=DEVICE).to(DEVICE)
     critic2_optim = torch.optim.Adam(critic2.parameters(), lr=config.learning_rate)
 
-    action_dim = env.action_space.shape[0]
-
-    target_entropy = -action_dim
-    log_alpha = torch.zeros(1, requires_grad=True, device=DEVICE)
+    target_entropy = torch.tensor(-np.prod(env.action_space.shape), device=DEVICE)
+    log_alpha = torch.tensor(np.log([config.alpha]), requires_grad=True, device=DEVICE)
     alpha_optim = torch.optim.Adam([log_alpha], lr=config.learning_rate)
+
 
 
     policy = SACPolicy(
